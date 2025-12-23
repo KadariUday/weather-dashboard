@@ -1,0 +1,34 @@
+/* Light Theme */
+body.light-theme {
+    --bg-primary: #f5f7fa;
+    --bg-secondary: #ffffff;
+    --bg-card: #f0f2f5;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b7280;
+    --border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .sidebar {
+    background: #ffffff;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .animated-bg {
+    opacity: 0.3;
+}
+
+/* Disable Animations */
+body.no-animations * {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Unit Toggle Cursor */
+.unit-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.unit-toggle span {
+    transition: opacity 0.3s ease;
+}

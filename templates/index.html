@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard | Real-Time Weather</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='map.css') }}">
+    <!-- Leaflet CSS for Interactive Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="{% if weather %}weather-{{ weather.condition }}{% endif %}">
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+
+    <div class="dashboard-wrapper">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-bolt"></i>
+                <span>SkySense</span>
+            </div>
+            <nav class="nav-links">
+                <a href="#" class="active"><i class="fas fa-th-large"></i></a>
+                <a href="#"><i class="fas fa-chart-pie"></i></a>
+                <a href="#" id="favoritesBtn"><i class="fas fa-heart"></i></a>
+                <a href="#"><i class="fas fa-calendar-days"></i></a>
+                <a href="#"><i class="fas fa-gear"></i></a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header: Search and Profile -->
+            <header class="dashboard-header">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <form method="POST" id="searchForm">
+                        <input type="text" name="city" id="cityInput" placeholder="Search City..." autocomplete="off">
+                    </form>
+                    <button class="location-btn" id="locationBtn" type="button" title="Use my location">
+                        <i class="fas fa-location-crosshairs"></i>
+                    </button>
+                </div>
+                <button class="map-btn" id="mapBtn" title="Select location on map">
+                    <i class="fas fa-map-marked-alt"></i>
+                </button>
+                <button class="theme-toggle-btn" id="themeToggleBtn">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </header>
+
+            {% if error %}
+            <div class="error-toast">{{ error }}</div>
+            {% endif %}
+
+            <div class="dashboard-grid">
+                <!-- Left Column: Current Weather and Forecast -->
+                <div class="grid-left">
+                    {% if weather %}
+                    <!-- Current Weather Card -->
+                    <div class="current-weather-card">
+                        <div class="card-header">
+                            <div class="location-tag">
+                                <i class="fas fa-location-dot"></i> {{ weather.city }}, {{ weather.country }}
+                                <button class="fav-btn" onclick="toggleFavorite('{{ weather.city }}')"
+                                    title="Add to favorites">
+                                    <i class="far fa-heart" id="favIcon"></i>
+                                </button>
+                            </div>
+                            <div class="unit-toggle">
+                                <span>F</span>
+                                <div class="toggle-track active"><span>C</span></div>
+                            </div>
+                        </div>
+                        <div class="date-time">{{ weather.date }}</div>
+
+                        <div class="weather-info-main">
+                            <div class="main-temp">{{ weather.temp }}°C</div>
+                            <div class="weather-details">
+                                <div class="feels-like">Feels Like {{ weather.feels_like }}°C</div>
+                                <div class="temp-range">High: {{ weather.high }}° Low: {{ weather.low }}°</div>
+                                <div class="description">
+                                    <i class="fas fa-cloud"></i> {{ weather.description }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sun-times">
+                            <div class="sun-item">
+                                <i class="fas fa-sunrise"></i>
+                                <div>
+                                    <span class="label">Sunrise</span>
+                                    <span class="time">{{ weather.sunrise }}</span>
+                                </div>
+                            </div>
+                            <div class="sun-item">
+                                <i class="fas fa-sunset"></i>
+                                <div>
+                                    <span class="label">Sunset</span>
+                                    <span class="time">{{ weather.sunset }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Today / Week Section -->
+                    <section class="forecast-section">
+                        <div class="section-header">
+                            <h2>Today / Week</h2>
+                        </div>
+                        <div class="forecast-row">
+                            {% if forecast %}
+                            {% for item in forecast %}
+                            <div class="forecast-card">
+                                <span class="f-time">{{ item.time }}</span>
+                                <img src="http://openweathermap.org/img/wn/{{ item.icon }}.png" alt="Icon">
+                                <span class="f-temp">{{ item.temp }}°</span>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="sunrise-sunset-card">
+                            <div class="sun-item">
+                                <p>Sunrise</p>
+                                <h3>{{ weather.sunrise if weather else '--' }}</h3>
+                            </div>
+                            <div class="sun-item">
+                                <p>Sunset</p>
+                                <h3>{{ weather.sunset if weather else '--' }}</h3>
+                            </div>
+                            <div class="sun-details">
+                                <p>Length of day</p>
+                                <h3>10h 23m</h3>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 5-Day Forecast Section -->
+                    {% if daily %}
+                    <section class="daily-forecast-section">
+                        <div class="section-header">
+                            <h2>5-Day Forecast</h2>
+                        </div>
+                        <div class="daily-forecast-grid">
+                            {% for day in daily %}
+                            <div class="daily-card">
+                                <div class="daily-day">{{ day.day }}</div>
+                                <div class="daily-date">{{ day.date }}</div>
+                                <img src="http://openweathermap.org/img/wn/{{ day.icon }}.png" alt="Icon">
+                                <div class="daily-temps">
+                                    <span class="daily-high">{{ day.high }}°</span>
+                                    <span class="daily-low">{{ day.low }}°</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+                </div>
+
+                <!-- Right Column: Highlights and Other Cities -->
+                <div class="grid-right">
+                    <section class="highlights-section">
+                        <h2>Today Highlight</h2>
+                        <div class="highlights-grid">
+                            <div class="highlight-card">
+                                <p>Chance of Rain</p>
+                                <div class="h-value">{{ weather.rain_chance if weather else '0' }}%</div>
+                                <i class="fas fa-cloud-showers-heavy"></i>
+                            </div>
+                            <div class="highlight-card">
+                                <p>UV Index</p>
+                                <div class="h-value">{{ weather.uv_index if weather else '0' }}</div>
+                                <i class="fas fa-sun"></i>
+                            </div>
+                            <div class="highlight-card">
+                                <p>Wind Status</p>
+                                <div class="h-value">{{ weather.wind_speed if weather else '0' }} m/s</div>
+                                <i class="fas fa-wind"></i>
+                            </div>
+                            <div class="highlight-card">
+                                <p>Humidity</p>
+                                <div class="h-value">{{ weather.humidity if weather else '0' }}%</div>
+                                <i class="fas fa-droplet"></i>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Favorite Cities Section -->
+                    <section class="favorite-cities">
+                        <div class="section-header">
+                            <h2>Favorite Cities</h2>
+                            <span class="fav-count" id="favCount">0</span>
+                        </div>
+                        <div id="favoritesList" class="favorites-list">
+                            <p class="no-favorites">No favorites yet. Click the heart icon to add cities!</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Map Modal -->
+    <div class="map-modal" id="mapModal">
+        <div class="map-modal-content">
+            <div class="map-modal-header">
+                <h2><i class="fas fa-map-marked-alt"></i> Select Location on Map</h2>
+                <button onclick="closeMapModal()" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="map-modal-body">
+                <p class="map-instruction">Click anywhere on the map to get weather data for that location</p>
+                <div id="worldMap"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS for Interactive Maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="{{ url_for('static', filename='map.js') }}"></script>
+</body>
+
+</html>
