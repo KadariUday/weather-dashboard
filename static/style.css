@@ -1,11 +1,12 @@
 :root {
     --bg-primary: #0b0e14;
-    --bg-secondary: #151b26;
-    --bg-card: #1a2332;
+    --bg-secondary: #131924;
+    --bg-glass: rgba(26, 35, 50, 0.7);
     --accent-purple: #7c4dff;
+    --accent-glow: rgba(124, 77, 255, 0.3);
     --text-primary: #ffffff;
-    --text-secondary: #8b92a7;
-    --border-color: rgba(255, 255, 255, 0.08);
+    --text-secondary: #a0a6b9;
+    --border-glass: rgba(255, 255, 255, 0.12);
 }
 
 * {
@@ -249,12 +250,22 @@ body {
     }
 }
 
-/* Weather Card Styles */
+/* Weather Card Styles (Premium Glassmorphism) */
 .current-weather-card {
-    background: var(--bg-card);
-    padding: 2rem;
-    border-radius: 20px;
-    border: 1px solid var(--border-color);
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    padding: 2.5rem;
+    border-radius: 24px;
+    border: 1px solid var(--border-glass);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.current-weather-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--accent-purple);
+    box-shadow: 0 15px 40px var(--accent-glow);
 }
 
 .card-header {
@@ -436,14 +447,16 @@ body {
 }
 
 .forecast-card {
-    background: var(--bg-card);
-    padding: 1rem;
-    border-radius: 15px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    padding: 1.25rem;
+    border-radius: 18px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    min-width: 80px;
+    gap: 10px;
+    min-width: 85px;
+    border: 1px solid var(--border-glass);
 }
 
 .f-time {
@@ -494,10 +507,14 @@ body {
 }
 
 .highlight-card {
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 1.5rem;
-    border-radius: 15px;
+    border-radius: 20px;
+    border: 1px solid var(--border-glass);
     position: relative;
+    transition: all 0.3s ease;
 }
 
 .highlight-card p {
@@ -798,16 +815,214 @@ body {
 }
 
 @keyframes cloudFloat {
-
-    0%,
-    100% {
+    0% {
         transform: translateX(0);
     }
 
     50% {
-        transform: translateX(30px);
+        transform: translateX(20px);
+    }
+
+    100% {
+        transform: translateX(0);
     }
 }
+
+/* Submit Pulse Animation */
+@keyframes buttonSubmit {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.submit-animate {
+    animation: buttonSubmit 0.3s ease-in-out;
+}
+
+/* Snow Animation */
+.weather-snow .animated-bg::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        radial-gradient(circle, white 10%, transparent 10%);
+    background-size: 20px 20px;
+    animation: snow 10s linear infinite;
+}
+
+@keyframes snow {
+    to {
+        transform: translateY(200%);
+    }
+}
+
+/* Thunderstorm Animation */
+.weather-thunderstorm .animated-bg {
+    animation: lightning 3s ease-in-out infinite;
+}
+
+@keyframes lightning {
+
+    0%,
+    90%,
+    100% {
+        opacity: 0.15;
+    }
+
+    92%,
+    94%,
+    96% {
+        opacity: 0.4;
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* --- New UI Animations --- */
+
+/* 1. keyframes for Fade In Up */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 2. Apply Entrance Animations with Staggering */
+.current-weather-card {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+    /* Start hidden */
+}
+
+.forecast-section {
+    animation: fadeInUp 0.6s ease-out forwards;
+    animation-delay: 0.1s;
+    opacity: 0;
+}
+
+.daily-forecast-section {
+    animation: fadeInUp 0.6s ease-out forwards;
+    animation-delay: 0.2s;
+    opacity: 0;
+}
+
+.highlights-section {
+    animation: fadeInUp 0.6s ease-out forwards;
+    animation-delay: 0.3s;
+    opacity: 0;
+}
+
+.favorite-cities {
+    animation: fadeInUp 0.6s ease-out forwards;
+    animation-delay: 0.4s;
+    opacity: 0;
+}
+
+/* 3. Enhanced Hover Effects */
+.highlight-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.highlight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    border-color: var(--accent-purple);
+}
+
+.forecast-card {
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.forecast-card:hover {
+    transform: scale(1.05);
+    background: rgba(124, 77, 255, 0.1);
+}
+
+/* 4. Button Interactions */
+button:active,
+.location-btn:active,
+.theme-toggle-btn:active,
+.nav-links a:active {
+    transform: scale(0.95);
+}
+
+/* 5. Input Focus Animation */
+.search-bar {
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Unit Toggle Group Styles */
+.unit-toggle-group {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.unit-toggle-group label {
+    cursor: pointer;
+    position: relative;
+}
+
+.unit-toggle-group input {
+    display: none;
+}
+
+.unit-toggle-group span {
+    padding: 8px 16px;
+    display: block;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.unit-toggle-group input:checked+span {
+    background: var(--accent-purple);
+    color: white;
+    box-shadow: 0 2px 8px rgba(124, 77, 255, 0.4);
+}
+
+.unit-toggle-group label:first-child span {
+    border-radius: 8px;
+}
+
+
+/* 6. Dashboard Animations & Effects */
+@keyframes glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 10px rgba(124, 77, 255, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(124, 77, 255, 0.5);
+    }
+}
+
+.current-weather-card {
+    animation: fadeInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards, glow 4s infinite ease-in-out;
+}
+
 
 /* Snow Animation */
 .weather-snow .animated-bg::before {
@@ -976,6 +1191,74 @@ body {
 
 .clear-favorites-btn:hover {
     background: rgba(255, 71, 87, 0.2);
+}
+
+/* AI Suggestions Section */
+.suggestions-section {
+    margin-top: 2rem;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.suggestion-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.8s ease backwards;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-purple);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.suggestion-card.men {
+    animation-delay: 0.1s;
+}
+
+.suggestion-card.women {
+    animation-delay: 0.2s;
+}
+
+.gender-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: rgba(124, 77, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--accent-purple);
+}
+
+.suggestion-content h4 {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.suggestion-content p {
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+    .suggestions-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @keyframes fadeIn {

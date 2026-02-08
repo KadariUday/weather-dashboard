@@ -10,9 +10,18 @@ document.addEventListener('DOMContentLoaded', function () {
     checkIfCurrentCityIsFavorite();
     initSidebarNavigation();
     initTheme();
-    initUnitToggle();
-    updateUnitToggleUI(); // Initialize the F/C toggle colors
+    // initUnitToggle(); -> handled by location.js now
+    // updateUnitToggleUI(); -> handled by jinja2 logic
+
     initLocationButton(); // Initialize location detection
+
+    // Sync local currentUnit with URL if present
+    const urlParams = new URLSearchParams(window.location.search);
+    const unitsParam = urlParams.get('units');
+    if (unitsParam) {
+        currentUnit = unitsParam === 'imperial' ? 'F' : 'C';
+        localStorage.setItem('tempUnit', currentUnit);
+    }
 });
 
 function toggleFavorite(city) {
@@ -37,17 +46,21 @@ function updateFavoritesDisplay() {
         if (favorites.length === 0) {
             favoritesList.innerHTML = '<p class="no-favorites">No favorites yet. Click the heart icon to add cities!</p>';
         } else {
-            favoritesList.innerHTML = favorites.map(city => `
-                <div class="fav-city-item" onclick="searchCity('${city}')">
+            favoritesList.innerHTML = favorites.map(city => {
+                // Escape single quotes for the onclick attribute
+                const escapedCity = city.replace(/'/g, "\\'");
+                return `
+                <div class="fav-city-item" onclick="searchCity('${escapedCity}')">
                     <div class="fav-city-name">
                         <i class="fas fa-location-dot"></i>
                         ${city}
                     </div>
-                    <button class="remove-fav" onclick="event.stopPropagation(); toggleFavorite('${city}')">
+                    <button class="remove-fav" onclick="event.stopPropagation(); toggleFavorite('${escapedCity}')">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
     }
 }
@@ -55,9 +68,10 @@ function updateFavoritesDisplay() {
 function checkIfCurrentCityIsFavorite() {
     const locationTag = document.querySelector('.location-tag');
     if (locationTag) {
-        const cityText = locationTag.textContent.trim().split(',')[0].replace(/[^\w\s]/gi, '').trim();
+        // Use data-city attribute for reliable matching
+        const cityText = locationTag.getAttribute('data-city');
         const favIcon = document.getElementById('favIcon');
-        if (favIcon) {
+        if (favIcon && cityText) {
             if (favorites.includes(cityText)) {
                 favIcon.classList.remove('far');
                 favIcon.classList.add('fas');
@@ -111,7 +125,7 @@ function detectLocation() {
                 .then(data => {
                     if (data && data.length > 0) {
                         const cityName = data[0].name;
-                        searchCity(cityName);
+                        performSearch(cityName);
                     } else {
                         alert('Could not determine your location');
                         resetLocationButton();
@@ -142,6 +156,42 @@ function detectLocation() {
     );
 }
 
+// Global Search Animation
+const performSearch = (city) => {
+    const dashboard = document.querySelector('.dashboard-grid');
+    if (dashboard) {
+        dashboard.style.opacity = '0';
+        dashboard.style.transform = 'translateY(10px)';
+        dashboard.style.transition = 'all 0.3s ease';
+    }
+
+    setTimeout(() => {
+        const currentUrl = new URL(window.location.href);
+        const units = currentUrl.searchParams.get('units');
+
+        // Preserve units in search if present
+        let targetUrl = `/?city=${encodeURIComponent(city)}`;
+        if (units) {
+            targetUrl += `&units=${units}`;
+        }
+        window.location.href = targetUrl;
+    }, 300);
+};
+
+// Initialize Search Form
+document.addEventListener('DOMContentLoaded', function () {
+    const searchForm = document.getElementById('searchForm');
+    const cityInput = document.getElementById('cityInput');
+
+    if (searchForm && cityInput) {
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const city = cityInput.value.trim();
+            if (city) performSearch(city);
+        });
+    }
+});
+
 function resetLocationButton() {
     const locationBtn = document.getElementById('locationBtn');
     if (locationBtn) {
@@ -151,74 +201,12 @@ function resetLocationButton() {
 }
 
 // Temperature Unit Toggle
+// Unit Toggle is now handled by location.js which reloads the page with ?units=
 function initUnitToggle() {
-    const unitToggle = document.querySelector('.unit-toggle');
-    if (unitToggle) {
-        // Store original Celsius values on page load
-        storeOriginalTemperatures();
-
-        unitToggle.addEventListener('click', function () {
-            currentUnit = currentUnit === 'C' ? 'F' : 'C';
-            localStorage.setItem('tempUnit', currentUnit);
-            convertAllTemperatures();
-            updateUnitToggleUI();
-        });
-    }
+    // Legacy code removed to prevent double conversion
 }
 
-function storeOriginalTemperatures() {
-    // Store main temperature
-    const mainTemp = document.querySelector('.main-temp');
-    if (mainTemp && !mainTemp.dataset.celsius) {
-        const temp = parseFloat(mainTemp.textContent);
-        mainTemp.dataset.celsius = temp;
-    }
-
-    // Store feels like
-    const feelsLike = document.querySelector('.feels-like');
-    if (feelsLike && !feelsLike.dataset.celsius) {
-        const text = feelsLike.textContent;
-        const match = text.match(/\d+/);
-        if (match) {
-            feelsLike.dataset.celsius = parseFloat(match[0]);
-        }
-    }
-
-    // Store high/low
-    const tempRange = document.querySelector('.temp-range');
-    if (tempRange && !tempRange.dataset.high) {
-        const text = tempRange.textContent;
-        const highMatch = text.match(/High: (\d+)/);
-        const lowMatch = text.match(/Low: (\d+)/);
-        if (highMatch && lowMatch) {
-            tempRange.dataset.high = parseFloat(highMatch[1]);
-            tempRange.dataset.low = parseFloat(lowMatch[1]);
-        }
-    }
-
-    // Store hourly forecast
-    document.querySelectorAll('.f-temp').forEach(el => {
-        if (!el.dataset.celsius) {
-            const temp = parseFloat(el.textContent);
-            el.dataset.celsius = temp;
-        }
-    });
-
-    // Store daily forecast
-    document.querySelectorAll('.daily-high').forEach(el => {
-        if (!el.dataset.celsius) {
-            const temp = parseFloat(el.textContent);
-            el.dataset.celsius = temp;
-        }
-    });
-
-    document.querySelectorAll('.daily-low').forEach(el => {
-        if (!el.dataset.celsius) {
-            const temp = parseFloat(el.textContent);
-            el.dataset.celsius = temp;
-        }
-    });
-}
+// function storeOriginalTemperatures() { ... removed ... }
 
 function updateUnitToggleUI() {
     const toggleTrack = document.querySelector('.toggle-track');
@@ -261,52 +249,7 @@ function updateUnitToggleUI() {
     }
 }
 
-function convertAllTemperatures() {
-    // Convert main temperature
-    const mainTemp = document.querySelector('.main-temp');
-    if (mainTemp && mainTemp.dataset.celsius) {
-        const celsius = parseFloat(mainTemp.dataset.celsius);
-        mainTemp.textContent = convertTemp(celsius) + '°' + currentUnit;
-    }
-
-    // Convert feels like
-    const feelsLike = document.querySelector('.feels-like');
-    if (feelsLike && feelsLike.dataset.celsius) {
-        const celsius = parseFloat(feelsLike.dataset.celsius);
-        feelsLike.textContent = `Feels Like ${convertTemp(celsius)}°${currentUnit}`;
-    }
-
-    // Convert high/low
-    const tempRange = document.querySelector('.temp-range');
-    if (tempRange && tempRange.dataset.high && tempRange.dataset.low) {
-        const high = parseFloat(tempRange.dataset.high);
-        const low = parseFloat(tempRange.dataset.low);
-        tempRange.textContent = `High: ${convertTemp(high)}° Low: ${convertTemp(low)}°`;
-    }
-
-    // Convert hourly forecast
-    document.querySelectorAll('.f-temp').forEach(el => {
-        if (el.dataset.celsius) {
-            const celsius = parseFloat(el.dataset.celsius);
-            el.textContent = convertTemp(celsius) + '°';
-        }
-    });
-
-    // Convert daily forecast
-    document.querySelectorAll('.daily-high').forEach(el => {
-        if (el.dataset.celsius) {
-            const celsius = parseFloat(el.dataset.celsius);
-            el.textContent = convertTemp(celsius) + '°';
-        }
-    });
-
-    document.querySelectorAll('.daily-low').forEach(el => {
-        if (el.dataset.celsius) {
-            const celsius = parseFloat(el.dataset.celsius);
-            el.textContent = convertTemp(celsius) + '°';
-        }
-    });
-}
+// function convertAllTemperatures() { ... removed ... }
 
 function convertTemp(celsius) {
     if (currentUnit === 'F') {
@@ -353,16 +296,13 @@ function initSidebarNavigation() {
                 case 0: // Dashboard
                     showDashboard();
                     break;
-                case 1: // Charts - just scroll to dashboard
-                    showDashboard();
-                    break;
-                case 2: // Favorites
+                case 1: // Favorites
                     scrollToFavorites();
                     break;
-                case 3: // Calendar
+                case 2: // Forecast (Calendar)
                     scrollToForecast();
                     break;
-                case 4: // Settings
+                case 3: // Settings (Gear)
                     showSettings();
                     break;
             }
@@ -480,10 +420,12 @@ function changeUnit(unit) {
     if (unit !== currentUnit) {
         currentUnit = unit;
         localStorage.setItem('tempUnit', currentUnit);
-        convertAllTemperatures();
-        updateUnitToggleUI();
-        closeSettings();
-        showSettings(); // Reopen with updated state
+
+        // Use URL-based reload to fetch correct data from backend
+        const currentUrl = new URL(window.location.href);
+        const unitsParam = unit === 'C' ? 'metric' : 'imperial';
+        currentUrl.searchParams.set('units', unitsParam);
+        window.location.href = currentUrl.toString();
     }
 }
 

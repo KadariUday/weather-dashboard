@@ -28,8 +28,8 @@
                 <span>SkySense</span>
             </div>
             <nav class="nav-links">
-                <a href="#" class="active"><i class="fas fa-th-large"></i></a>
-                <a href="#"><i class="fas fa-chart-pie"></i></a>
+                <a href="/" class="active" title="Dashboard"><i class="fas fa-th-large"></i></a>
+
                 <a href="#" id="favoritesBtn"><i class="fas fa-heart"></i></a>
                 <a href="#"><i class="fas fa-calendar-days"></i></a>
                 <a href="#"><i class="fas fa-gear"></i></a>
@@ -42,7 +42,7 @@
             <header class="dashboard-header">
                 <div class="search-bar">
                     <i class="fas fa-search"></i>
-                    <form method="POST" id="searchForm">
+                    <form method="GET" id="searchForm">
                         <input type="text" name="city" id="cityInput" placeholder="Search City..." autocomplete="off">
                     </form>
                     <button class="location-btn" id="locationBtn" type="button" title="Use my location">
@@ -68,24 +68,29 @@
                     <!-- Current Weather Card -->
                     <div class="current-weather-card">
                         <div class="card-header">
-                            <div class="location-tag">
+                            <div class="location-tag" data-city="{{ weather.city }}">
                                 <i class="fas fa-location-dot"></i> {{ weather.city }}, {{ weather.country }}
                                 <button class="fav-btn" onclick="toggleFavorite('{{ weather.city }}')"
                                     title="Add to favorites">
                                     <i class="far fa-heart" id="favIcon"></i>
                                 </button>
                             </div>
-                            <div class="unit-toggle">
-                                <span>F</span>
-                                <div class="toggle-track active"><span>C</span></div>
+                            <div class="unit-toggle" title="Toggle °C / °F">
+                                <span style="font-size: 0.8rem; font-weight: bold; margin-right: 5px;">
+                                    {{ '°F' if request.args.get('units') == 'imperial' else '°C' }}
+                                </span>
+                                <i class="fas fa-exchange-alt"></i>
                             </div>
+
                         </div>
                         <div class="date-time">{{ weather.date }}</div>
 
                         <div class="weather-info-main">
-                            <div class="main-temp">{{ weather.temp }}°C</div>
+                            <div class="main-temp">{{ weather.temp }}°{{ 'F' if request.args.get('units') == 'imperial'
+                                else 'C' }}</div>
                             <div class="weather-details">
-                                <div class="feels-like">Feels Like {{ weather.feels_like }}°C</div>
+                                <div class="feels-like">Feels Like {{ weather.feels_like }}°{{ 'F' if
+                                    request.args.get('units') == 'imperial' else 'C' }}</div>
                                 <div class="temp-range">High: {{ weather.high }}° Low: {{ weather.low }}°</div>
                                 <div class="description">
                                     <i class="fas fa-cloud"></i> {{ weather.description }}
@@ -178,6 +183,25 @@
                                 <div class="h-value">{{ weather.rain_chance if weather else '0' }}%</div>
                                 <i class="fas fa-cloud-showers-heavy"></i>
                             </div>
+
+                            {% if aqi %}
+                            <div class="highlight-card">
+                                <p>Air Quality</p>
+                                <div class="h-value">{{ aqi.val }}</div>
+                                <p style="color: var(--text-secondary); font-size: 0.8rem;">{{ aqi.label }}</p>
+                                <i class="fas fa-lungs" style="opacity: 0.5;"></i>
+                            </div>
+                            {% endif %}
+
+                            {% if pollen %}
+                            <div class="highlight-card">
+                                <p>Pollen (Grass)</p>
+                                <div class="h-value">{{ pollen.grass }}</div>
+                                <p style="color: var(--text-secondary); font-size: 0.8rem;">Tree: {{ pollen.tree }}</p>
+                                <i class="fas fa-tree" style="opacity: 0.5;"></i>
+                            </div>
+                            {% endif %}
+
                             <div class="highlight-card">
                                 <p>UV Index</p>
                                 <div class="h-value">{{ weather.uv_index if weather else '0' }}</div>
@@ -195,6 +219,31 @@
                             </div>
                         </div>
                     </section>
+
+                    <!-- AI Clothing Suggestions -->
+                    {% if suggestions %}
+                    <section class="suggestions-section animate-up">
+                        <div class="section-header">
+                            <h2><i class="fas fa-tshirt"></i> AI Outfit Guide</h2>
+                        </div>
+                        <div class="suggestions-grid">
+                            <div class="suggestion-card men">
+                                <div class="gender-icon"><i class="fas fa-mars"></i></div>
+                                <div class="suggestion-content">
+                                    <h4>For Men</h4>
+                                    <p>{{ suggestions.men }}</p>
+                                </div>
+                            </div>
+                            <div class="suggestion-card women">
+                                <div class="gender-icon"><i class="fas fa-venus"></i></div>
+                                <div class="suggestion-content">
+                                    <h4>For Women</h4>
+                                    <p>{{ suggestions.women }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    {% endif %}
 
                     <!-- Favorite Cities Section -->
                     <section class="favorite-cities">
@@ -231,6 +280,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script src="{{ url_for('static', filename='map.js') }}"></script>
+    <script src="{{ url_for('static', filename='location.js') }}"></script>
 </body>
+
 
 </html>
